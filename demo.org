@@ -1,0 +1,283 @@
+#+title: SurrealDB Demo
+
+This document is for SurrealDB demo. It is meant to be an introduction to SurrealDB, especially with SurrealQL. There are number of interactions involved in this demo, but it only scratches the surface.
+
+If you want to find more about SurrealQL, you can check out the official document, which provides a lot of details for each statement used, and more complex use cases.
+https://surrealdb.com/docs/surrealql
+
+* Prerequisites
+In order to follow the rest of the demo steps, you need to at least have the following:
+
+- ~surreal~ CLI from SurrealDB
+
+You can find the installation guide in https://surrealdb.com/docs/installation.
+
+This repository is also set up with Nix Flake and Direnv, so for Nix users, it should be only a matter of copying the repository and ~cd~ into it.
+
+* Start SurrealDB
+There are several ways to get SurrealDB up and running, but the following command should do.
+
+#+NAME: surreal-start
+#+begin_src bash :async
+  surreal start \
+          --auth \
+          --user root \
+          --pass surrealdb \
+          memory
+#+end_src
+
+This starts the SurrealDB server process on your machine (by default it uses port ~:8000~, which you can change with ~--bind~ flag).
+
+A quick reference of what the command does:
+- ~start memory~: Start the SurrealDB server with in-memory storage, only meant for simple use cases
+- ~--auth~: Enable authentication -- without this, anonymous users can have the same permissions as root user
+- ~--user~: Set the root user username
+- ~--pass~: Set the root user password
+
+#+RESULTS: surreal-start
+: __
+
+Ensure SurrealDB is running by running the following command
+
+#+NAME: surreal-is-ready
+#+begin_src bash
+  surreal is-ready --endpoint "http://localhost:8000"
+#+end_src
+
+#+RESULTS: surreal-is-ready
+: __
+
+
+* Running SurrealQL
+For running SurrealQL, the easiest approach is to use ~surreal sql~ command.
+
+** From CLI
+~surreal sql~ gives you a REPL to connect to SurrealDB.
+
+#+begin_src bash :noeval
+  surreal sql \
+          --endpoint "http://localhost:8000" \
+          --user root \
+          --pass surrealdb \
+          --pretty
+#+end_src
+
+This is meant to strat interactive REPL, and you cannot run SQL as a part of a script.
+
+*** Select Namespace and Database
+You can select ~namespace~ and ~database~ from the ~surreal sql~ command's argument, but you can do that from REPL, too.
+#+begin_src sql :noeval
+  USE NS demo_namespace DB demo_database;
+#+end_src
+
+*** Add Data
+Let's add some data into the database.
+#+begin_src sql :noeval
+  CREATE user:alice SET first_name = "Alice", email = "alice@example.com";
+#+end_src
+
+Just like above, but with more SQL like syntax is also supported.
+#+begin_src sql :noeval
+  INSERT INTO user (id, fist_name, email) VALUES ("bob", "Bob", "bob@example.com");
+#+end_src
+
+Also, document like syntax is supported.
+#+begin_src sql :noeval
+  CREATE user:colin CONTENT {
+      first_name: "Colin",
+      email: "colin@example.com",
+  }
+#+end_src
+
+~INSERT~ also supports this.
+#+begin_src sql :noeval
+  INSERT INTO user {
+      id: "dylan",
+      first_name: "Dylan",
+      email: "dylan@example.com",
+  }
+#+end_src
+
+👉 Note: "Record ID" is specified for all of the data above. If you do not specify the ~id~ input with ~:alice~ or ~id: "dylan"~, it will be automatically generated using short ID based on UUID.
+#+begin_src sql :noeval
+  CREATE user SET dummy_data = true;
+#+end_src
+
+*** Get Data
+SurrealQL uses a very similar syntax to SQL.
+#+begin_src sql :noeval
+  SELECT * FROM user;
+#+end_src
+
+Because SurrealDB uses the Record ID, if you know the Record's ID, it allows ~O(1)~ lookup without traversing all the records.
+#+begin_src sql :noeval
+  SELECT * FROM user:bob;
+#+end_src
+
+You can find what SurrealDB actually does with ~EXPLAIN~ keyword.
+#+begin_src sql :noeval
+  SELECT * FROM user:bob EXPLAIN;
+#+end_src
+
+
+** From https://surrealist.app
+There is a browser and desktop based query playground created by  https://starlane.studio/. It has SurrealQL syntax highlighting, and can be used to interact with any SurrealDB instance as long as you have access.
+
+For connecting to the running database, you can provide the connection details like below.
+[[file:images/surrealist-connect-to-db.png]]
+
+If you simply want to test with SurrealDB, you can spin up a sandbox envirnoment, which only lives while the browser window is open.
+[[file:images/surrealist-use-sandbox.png]]
+
+
+* Using SurrealDB Demo Data
+SurrealDB has some decently complicated data for demo purposes.
+https://surrealdb.com/docs/surrealql/demo
+
+For simplicity sake, I have copied the demo data file over to this repo, [[file:surreal_deal_v1.surql][surreal_deal_v1.surql]].
+Let's import it and check out more about SurrealDB and SurrealQL.
+#+NAME: surreal-import
+#+begin_src bash
+  surreal import \
+          --endpoint "http://localhost:8000" \
+          --user root \
+          --pass surrealdb \
+          --ns demo_namespace \
+          --db demo_database \
+          surreal_deal_v1.surql
+#+end_src
+
+#+RESULTS: surreal-import
+: __
+
+If you want to import from the file without copying this repository, you can run the following command instead.
+#+NAME: surreal-import-curl
+#+begin_src bash
+  {
+      curl -sSL -o /tmp/surreal_deal_v1.surql 'https://raw.githubusercontent.com/rytswd/disruptive-tech-london-2023/main/surreal_deal_v1.surql'
+      surreal import \
+              --endpoint "http://localhost:8000" \
+              --user root \
+              --pass surrealdb \
+              --ns demo_namespace \
+              --db demo_database \
+              /tmp/surreal_deal_v1.surql
+  }
+#+end_src
+
+#+RESULTS: surreal-import-curl
+: __
+
+
+** Play with CLI
+You can check out the ~surreal-deal-v1.surql~ for the details of dataset, but you can also check from the REPL.
+#+begin_src bash :noeval
+  surreal sql \
+          --endpoint "http://localhost:8000" \
+          --user root \
+          --pass surrealdb \
+          --ns demo_namespace \
+          --db demo_database \
+          --pretty
+#+end_src
+
+As shown above, we can also use Surrealist if you prefer a slick UI.
+
+*** Table Details
+#+begin_src sql :noeval
+  INFO FOR DB;
+#+end_src
+
+*** Read with Graph
+The demo data consists of many "graph" relationships. Let's check them out.
+
+First of all, get some ~person~ details.
+#+begin_src sql :noeval
+  SELECT * FROM person LIMIT 3;
+#+end_src
+
+In there, there is an entry with ~person:00r2fn770u3m3o62l83i~, which is "Richie Buck" - let's use him as an example.
+#+begin_src sql :noeval
+  SELECT first_name, last_name, email FROM ONLY person:00r2fn770u3m3o62l83i
+#+end_src
+
+On top of his information, check which products he bought
+#+begin_src sql :noeval
+  SELECT
+      first_name,
+      last_name,
+      email,
+      ->order->product AS ordered_product
+  FROM ONLY person:00r2fn770u3m3o62l83i
+#+end_src
+
+It only lists the ~product~ IDs -- which could be useful, but let's get more details.
+#+begin_src sql :noeval
+  SELECT
+      first_name,
+      last_name,
+      email,
+      ->order->product.* AS ordered_product
+  FROM ONLY person:00r2fn770u3m3o62l83i
+#+end_src
+
+We can calculate how much he spent
+#+begin_src sql :noeval
+  SELECT
+      first_name,
+      last_name,
+      email,
+      math::sum(->order->product.price) AS total_cost_of_products
+  FROM ONLY person:00r2fn770u3m3o62l83i
+#+end_src
+
+Instead of getting the list of ~product~ details, let's get which artist made those products.
+#+begin_src sql :noeval
+  SELECT
+      first_name,
+      last_name,
+      email,
+      ->order->product<-create<-artist.name AS artists_created_ordered_product
+  FROM ONLY person:00r2fn770u3m3o62l83i
+#+end_src
+
+Looks like "Ilana Butler" shows up twice, let's get a unique list of artists, and sort alphabetically.
+#+begin_src sql :noeval
+  SELECT
+      first_name,
+      last_name,
+      email,
+      array::sort::asc(
+          array::distinct(
+              ->order->product<-create<-artist.name
+          )
+      ) AS artists_created_ordered_product
+  FROM ONLY person:00r2fn770u3m3o62l83i
+#+end_src
+
+We can go even further, let's decipher this query.
+#+begin_src sql :noeval
+  SELECT
+      first_name,
+      last_name,
+      email,
+      count(
+          array::distinct(
+              ->order->product<-create<-artist->create->product<-order<-person.name
+          )
+      ) as people_who_bought
+  FROM ONLY person:00r2fn770u3m3o62l83i
+#+end_src
+
+You could probaly read this as:
+- ~->order->product~: Products this person ordered
+- ~product<-create<-artist~: Artists who created this product
+- ~artist->create->product~: Products this artist created
+- ~product<-order<-person~: Persons who ordered these products
+
+So, this would be "people who bought some products that were created by artists, from whom Richie has bought at least one product".
+
+That was probably unnecessarily complicated, but you can see how the graph relationship allows arbitrary relationship to be created at any point
+
+
+
