@@ -271,9 +271,9 @@ We can go even further, let's decipher this query.
 
 You could probaly read this as:
 - ~->order->product~: Products this person ordered
-- ~product<-create<-artist~: Artists who created this product
-- ~artist->create->product~: Products this artist created
-- ~product<-order<-person~: Persons who ordered these products
+- ~product<-create<-artist~: Artists who created those products
+- ~artist->create->product~: Products those artists created
+- ~product<-order<-person~: Persons who ordered those products
 
 So, this would be "people who bought some products that were created by artists, from whom Richie has bought at least one product".
 
