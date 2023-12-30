@@ -10,11 +10,9 @@
 
 Official Website: https://www.meetup.com/disruptive-tech-lon/events/296244735/
 
-Original Recording: _To be confirmed, may not be available_
+Original Recording: Not Available
 
 Original Slide: https://dub.sh/disruptive-tech-london-nov-2023-surrealdb
-
-Follow-up Video: _To be confirmed_
 
 ## 🌄 About This Repository
 
@@ -52,11 +50,18 @@ On top of that, there were several completely supplementary tools used:
 
 ### Clean Up
 
-To be updated
+The demo uses a local SurrealDB instance, and thus shutting it down is the only
+step.
+
+```sh
+killall surreal
+```
 
 ### Troubleshooting
 
-To be updated
+If you found any misbehaviour with the setup, please feel free to create an
+issue. While I'm not intending to maintain with the latest details here, I still
+check activities and may be able to help.
 
 ## 🔎 References
 
